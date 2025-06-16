@@ -1,4 +1,4 @@
-package com.example.boitheke
+package com.boitheke.app
 
 import io.flutter.embedding.android.FlutterActivity
 
