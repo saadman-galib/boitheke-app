@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/models/organization.dart';
 import '../../../../core/models/book.dart';
 import '../../../../core/services/dummy_data_service.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../home/presentation/widgets/book_card.dart';
 
 class OrganizationProfilePage extends ConsumerStatefulWidget {
@@ -49,6 +48,8 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
           _isFollowing = organization.isFollowing;
           _isLoading = false;
         });
+      } else if (mounted) {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
@@ -60,14 +61,21 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     if (_organization == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Organization')),
+        appBar: AppBar(
+          title: const Text('Organization'),
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+        ),
         body: const Center(
           child: Text('Organization not found'),
         ),
@@ -75,292 +83,429 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
     }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // Profile Header
+          // Modern Profile Header
           SliverAppBar(
-            expandedHeight: 300.h,
+            expandedHeight: 350.h,
             floating: false,
             pinned: true,
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
-              background: _buildProfileHeader(),
+              background: _buildModernProfileHeader(),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () => _shareOrganization(),
+              ),
+            ],
           ),
           
-          // Publications Section
+          // Content Body
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Column(
                 children: [
-                  Text(
-                    'Publications (${_publications.length})',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.headlineMedium?.color,
-                    ),
-                  ),
+                  _buildStatisticsCard(),
+                  _buildAboutSection(),
+                  _buildPublicationsSection(),
+                  SizedBox(height: 100.h),
                 ],
               ),
             ),
           ),
-          
-          // Publications Grid
-          _publications.isEmpty
-              ? SliverToBoxAdapter(
-                  child: _buildEmptyState(),
-                )
-              : SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 16.w,
-                      mainAxisSpacing: 16.h,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final book = _publications[index];
-                        return BookCard(
-                          book: book,
-                          onTap: () => _navigateToReader(book),
-                        );
-                      },
-                      childCount: _publications.length,
-                    ),
-                  ),
-                ),
-          
-          SliverToBoxAdapter(child: SizedBox(height: 40.h)),
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildModernProfileHeader() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Theme.of(context).primaryColor.withValues(alpha: 0.8),
             Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
           ],
         ),
       ),
-      child: Container(
-        padding: EdgeInsets.fromLTRB(20.w, 60.h, 20.w, 20.h),
-        child: Column(
-          children: [
-            const Spacer(),
-            
-            // Logo
-            Container(
-              width: 100.w,
-              height: 100.w,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20.r),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20.r),
-                child: CachedNetworkImage(
-                  imageUrl: _organization!.logoUrl,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.business,
-                      size: 50.sp,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: Colors.grey[300],
-                    child: Icon(
-                      Icons.business,
-                      size: 50.sp,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            
-            SizedBox(height: 16.h),
-            
-            // Name and Verification
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: Text(
-                    _organization!.name,
-                    style: TextStyle(
-                      fontSize: 22.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-                if (_organization!.isVerified) ...[
-                  SizedBox(width: 8.w),
-                  Icon(
-                    Icons.verified,
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Logo
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
                     color: Colors.white,
+                    width: 4,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 60.r,
+                  backgroundImage: CachedNetworkImageProvider(_organization!.logoUrl),
+                  backgroundColor: Colors.white,
+                ),
+              ),
+              
+              SizedBox(height: 16.h),
+              
+              // Name
+              Text(
+                _organization!.name,
+                style: TextStyle(
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              
+              SizedBox(height: 8.h),
+              
+              // Description
+              if (_organization!.description.isNotEmpty)
+                Text(
+                  _organization!.description,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              
+              SizedBox(height: 20.h),
+              
+              // Follow Button
+              SizedBox(
+                width: 200.w,
+                child: ElevatedButton.icon(
+                  onPressed: _toggleFollow,
+                  icon: Icon(
+                    _isFollowing ? Icons.check : Icons.add,
                     size: 20.sp,
                   ),
-                ],
-              ],
-            ),
-            
-            SizedBox(height: 8.h),
-            
-            // Description
-            Text(
-              _organization!.description,
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Colors.white.withValues(alpha: 0.9),
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            
-            SizedBox(height: 20.h),
-            
-            // Stats Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem('Publications', _organization!.totalPublications.toString()),
-                _buildStatItem('Followers', _formatNumber(_organization!.followersCount)),
-                _buildStatItem('Founded', _organization!.createdDate.year.toString()),
-              ],
-            ),
-            
-            SizedBox(height: 20.h),
-            
-            // Action Buttons
-            Row(
-              children: [
-                // Follow Button
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _toggleFollow,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isFollowing ? Colors.white : Colors.transparent,
-                      foregroundColor: _isFollowing ? Theme.of(context).primaryColor : Colors.white,
-                      side: const BorderSide(color: Colors.white, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                  label: Text(
+                    _isFollowing ? 'Following' : 'Follow',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Text(
-                      _isFollowing ? 'Following' : 'Follow',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isFollowing 
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.white,
+                    foregroundColor: _isFollowing 
+                        ? Colors.white
+                        : Theme.of(context).primaryColor,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.r),
+                      side: BorderSide(
+                        color: Colors.white,
+                        width: _isFollowing ? 2 : 0,
                       ),
                     ),
                   ),
                 ),
-                
-                SizedBox(width: 12.w),
-                
-                // Contact Button
-                if (_organization!.email != null || _organization!.website != null)
-                  ElevatedButton(
-                    onPressed: _showContactOptions,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    ),
-                    child: Icon(
-                      Icons.contact_mail,
-                      size: 20.sp,
-                    ),
-                  ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatisticsCard() {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(
+            'Publications',
+            _organization!.totalPublications.toString(),
+            Icons.library_books,
+          ),
+          _buildDivider(),
+          _buildStatItem(
+            'Followers',
+            _formatNumber(_organization!.followersCount),
+            Icons.people,
+          ),
+          _buildDivider(),
+          _buildStatItem(
+            'Verified',
+            _organization!.isVerified ? 'Yes' : 'No',
+            Icons.verified,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
+        Icon(
+          icon,
+          size: 28.sp,
+          color: Theme.of(context).primaryColor,
+        ),
+        SizedBox(height: 8.h),
         Text(
           value,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        SizedBox(height: 4.h),
         Text(
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(40.w),
-        child: Column(
-          children: [
-            Icon(
-              Icons.library_books_outlined,
-              size: 64.sp,
-              color: Theme.of(context).textTheme.bodySmall?.color,
+  Widget _buildDivider() {
+    return Container(
+      height: 40.h,
+      width: 1,
+      color: Colors.grey.withOpacity(0.3),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    if (_organization!.description.isEmpty && 
+        _organization!.website == null && 
+        _organization!.email == null) {
+      return const SizedBox();
+    }
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'About',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
-            SizedBox(height: 16.h),
+          ),
+          
+          SizedBox(height: 12.h),
+          
+          if (_organization!.description.isNotEmpty) ...[
             Text(
-              'No Publications Yet',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w500,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              'This organization hasn\'t published any content yet.',
+              _organization!.description,
               style: TextStyle(
                 fontSize: 14.sp,
-                color: Theme.of(context).textTheme.bodySmall?.color,
+                height: 1.5,
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
               ),
-              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 16.h),
+          ],
+          
+          // Contact Info
+          if (_organization!.website != null) ...[
+            _buildContactItem(
+              Icons.language,
+              'Website',
+              _organization!.website!,
+              () => _launchUrl(_organization!.website!),
+            ),
+            SizedBox(height: 8.h),
+          ],
+          
+          if (_organization!.email != null) ...[
+            _buildContactItem(
+              Icons.email,
+              'Email',
+              _organization!.email!,
+              () => _launchUrl('mailto:${_organization!.email!}'),
+            ),
+            SizedBox(height: 8.h),
+          ],
+          
+          if (_organization!.phone != null) ...[
+            _buildContactItem(
+              Icons.phone,
+              'Phone',
+              _organization!.phone!,
+              () => _launchUrl('tel:${_organization!.phone!}'),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItem(IconData icon, String label, String value, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20.sp,
+            color: Theme.of(context).primaryColor,
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Theme.of(context).textTheme.bodySmall?.color,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Theme.of(context).primaryColor,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPublicationsSection() {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Publications (${_publications.length})',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              if (_publications.length > 6)
+                TextButton(
+                  onPressed: () => _showAllPublications(),
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          SizedBox(height: 16.h),
+          
+          _publications.isEmpty
+              ? Container(
+                  padding: EdgeInsets.all(40.w),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.library_books_outlined,
+                        size: 48.sp,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'No publications yet',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                  ),
+                  itemCount: _publications.length > 6 ? 6 : _publications.length,
+                  itemBuilder: (context, index) {
+                    return BookCard(
+                      book: _publications[index],
+                      onTap: () => _openBook(_publications[index]),
+                    );
+                  },
+                ),
+        ],
       ),
     );
   }
@@ -374,7 +519,7 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
     return number.toString();
   }
 
-  void _toggleFollow() async {
+  Future<void> _toggleFollow() async {
     setState(() => _isFollowing = !_isFollowing);
     
     try {
@@ -384,8 +529,9 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              _isFollowing ? 'Following organization' : 'Unfollowed organization',
+              _isFollowing ? 'Following ${_organization!.name}' : 'Unfollowed ${_organization!.name}',
             ),
+            backgroundColor: Theme.of(context).primaryColor,
             duration: const Duration(seconds: 2),
           ),
         );
@@ -393,60 +539,95 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
     } catch (e) {
       // Revert on error
       setState(() => _isFollowing = !_isFollowing);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update follow status'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _showContactOptions() {
+  void _shareOrganization() {
+    // Implement share functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Sharing ${_organization!.name}...'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  void _openBook(Book book) {
+    Navigator.pushNamed(
+      context,
+      '/reader',
+      arguments: book.id,
+    );
+  }
+
+  void _showAllPublications() {
+    // Navigate to all publications page or show modal
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Contact ${_organization!.name}',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-              ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.r),
+              topRight: Radius.circular(20.r),
             ),
-            SizedBox(height: 20.h),
-            
-            if (_organization!.website != null)
-              ListTile(
-                leading: const Icon(Icons.web),
-                title: const Text('Website'),
-                subtitle: Text(_organization!.website!),
-                onTap: () => _launchUrl(_organization!.website!),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 8.h),
+                height: 4.h,
+                width: 40.w,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(2.r),
+                ),
               ),
-            
-            if (_organization!.email != null)
-              ListTile(
-                leading: const Icon(Icons.email),
-                title: const Text('Email'),
-                subtitle: Text(_organization!.email!),
-                onTap: () => _launchUrl('mailto:${_organization!.email!}'),
+              Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Text(
+                  'All Publications by ${_organization!.name}',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            
-            if (_organization!.phone != null)
-              ListTile(
-                leading: const Icon(Icons.phone),
-                title: const Text('Phone'),
-                subtitle: Text(_organization!.phone!),
-                onTap: () => _launchUrl('tel:${_organization!.phone!}'),
+              Expanded(
+                child: GridView.builder(
+                  controller: scrollController,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                  ),
+                  itemCount: _publications.length,
+                  itemBuilder: (context, index) {
+                    return BookCard(
+                      book: _publications[index],
+                      onTap: () => _openBook(_publications[index]),
+                    );
+                  },
+                ),
               ),
-            
-            if (_organization!.address != null)
-              ListTile(
-                leading: const Icon(Icons.location_on),
-                title: const Text('Address'),
-                subtitle: Text(_organization!.address!),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -457,18 +638,5 @@ class _OrganizationProfilePageState extends ConsumerState<OrganizationProfilePag
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
-    if (mounted) Navigator.pop(context);
-  }
-
-  void _navigateToReader(Book book) {
-    Navigator.pushNamed(
-      context,
-      AppRouter.reader,
-      arguments: {
-        'bookId': book.id,
-        'bookTitle': book.title,
-        'bookUrl': book.pdfUrl ?? '',
-      },
-    );
   }
 }

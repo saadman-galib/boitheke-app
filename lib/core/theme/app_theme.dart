@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 class AppTheme {
   // Primary Colors
-  static const Color primaryColor = Color(0xFF6B4E3D); // Warm brown
-  static const Color secondaryColor = Color(0xFFD4A574); // Light brown/beige
-  static const Color accentColor = Color(0xFFFF6B35); // Orange accent
+  static const Color primaryColor = Color(0xFF00695C); // Deep Teal
+  static const Color secondaryColor = Color(0xFF4DB6AC); // Light Teal
+  static const Color accentColor = Color(0xFF26A69A); // Teal accent
   
   // Background Colors
   static const Color backgroundColor = Color(0xFFFAF9F6); // Warm white
@@ -22,10 +22,9 @@ class AppTheme {
   static const Color darkCardColor = Color(0xFF3A3A3A);
   static const Color darkTextPrimary = Color(0xFFFAFAFA);
   static const Color darkTextSecondary = Color(0xFFBDBDBD);
-
   static ThemeData get lightTheme {
     return ThemeData(
-      primarySwatch: Colors.brown,
+      primarySwatch: Colors.teal,
       primaryColor: primaryColor,
       scaffoldBackgroundColor: backgroundColor,
       cardColor: cardColor,
@@ -176,10 +175,9 @@ class AppTheme {
       ),
     );
   }
-
   static ThemeData get darkTheme {
     return ThemeData(
-      primarySwatch: Colors.brown,
+      primarySwatch: Colors.teal,
       primaryColor: secondaryColor,
       scaffoldBackgroundColor: darkBackgroundColor,
       cardColor: darkCardColor,

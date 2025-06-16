@@ -6,7 +6,6 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/models/author.dart';
 import '../../../../core/models/book.dart';
 import '../../../../core/services/dummy_data_service.dart';
-import '../../../../core/router/app_router.dart';
 import '../../../home/presentation/widgets/book_card.dart';
 
 class AuthorProfilePage extends ConsumerStatefulWidget {
@@ -49,6 +48,8 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
           _isFollowing = author.isFollowing;
           _isLoading = false;
         });
+      } else if (mounted) {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (mounted) {
@@ -60,14 +61,21 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
     if (_author == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Author')),
+        appBar: AppBar(
+          title: const Text('Author'),
+          backgroundColor: Theme.of(context).primaryColor,
+          foregroundColor: Colors.white,
+        ),
         body: const Center(
           child: Text('Author not found'),
         ),
@@ -75,330 +83,392 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
     }
 
     return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
-          // Profile Header
+          // Modern Profile Header
           SliverAppBar(
             expandedHeight: 350.h,
             floating: false,
             pinned: true,
+            backgroundColor: Theme.of(context).primaryColor,
+            foregroundColor: Colors.white,
             flexibleSpace: FlexibleSpaceBar(
-              background: _buildProfileHeader(),
+              background: _buildModernProfileHeader(),
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share),
+                onPressed: () => _shareAuthor(),
+              ),
+            ],
           ),
           
-          // Works Section
+          // Content Body
           SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(20.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Container(
+              color: Theme.of(context).scaffoldBackgroundColor,
+              child: Column(
                 children: [
-                  Text(
-                    'Works (${_works.length})',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).textTheme.headlineMedium?.color,
-                    ),
-                  ),
+                  _buildStatisticsCard(),
+                  _buildAboutSection(),
+                  _buildWorksSection(),
+                  SizedBox(height: 100.h),
                 ],
               ),
             ),
           ),
-          
-          // Works Grid
-          _works.isEmpty
-              ? SliverToBoxAdapter(
-                  child: _buildEmptyState(),
-                )
-              : SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.w),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.7,
-                      crossAxisSpacing: 16.w,
-                      mainAxisSpacing: 16.h,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final book = _works[index];
-                        return BookCard(
-                          book: book,
-                          onTap: () => _navigateToReader(book),
-                        );
-                      },
-                      childCount: _works.length,
-                    ),
-                  ),
-                ),
-          
-          SliverToBoxAdapter(child: SizedBox(height: 40.h)),
         ],
       ),
     );
   }
 
-  Widget _buildProfileHeader() {
+  Widget _buildModernProfileHeader() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Theme.of(context).primaryColor.withValues(alpha: 0.8),
             Theme.of(context).primaryColor,
+            Theme.of(context).primaryColor.withOpacity(0.8),
           ],
         ),
       ),
-      child: Container(
-        padding: EdgeInsets.fromLTRB(20.w, 60.h, 20.w, 20.h),
-        child: Column(
-          children: [
-            const Spacer(),
-            
-            // Profile Image
-            Container(
-              width: 120.w,
-              height: 120.w,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 4,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
-                    blurRadius: 15,
-                    offset: const Offset(0, 5),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(20.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Profile Picture
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 4,
                   ),
-                ],
-              ),
-              child: ClipOval(
-                child: _author!.profileImageUrl != null
-                    ? CachedNetworkImage(
-                        imageUrl: _author!.profileImageUrl!,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.person,
-                            size: 60.sp,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                        errorWidget: (context, url, error) => Container(
-                          color: Colors.grey[300],
-                          child: Icon(
-                            Icons.person,
-                            size: 60.sp,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      )
-                    : Container(
-                        color: Colors.white,
-                        child: Icon(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 60.r,
+                  backgroundImage: _author!.profileImageUrl != null
+                      ? CachedNetworkImageProvider(_author!.profileImageUrl!)
+                      : null,
+                  backgroundColor: Colors.white,
+                  child: _author!.profileImageUrl == null
+                      ? Icon(
                           Icons.person,
                           size: 60.sp,
                           color: Theme.of(context).primaryColor,
-                        ),
-                      ),
-              ),
-            ),
-            
-            SizedBox(height: 16.h),
-            
-            // Name
-            Text(
-              _author!.name,
-              style: TextStyle(
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            
-            SizedBox(height: 8.h),
-            
-            // Nationality and Birth Year
-            if (_author!.nationality != null || _author!.birthDate != null)
-              Text(
-                [
-                  if (_author!.nationality != null) _author!.nationality!,
-                  if (_author!.birthDate != null) _author!.birthDate!.year.toString(),
-                ].join(' • '),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white.withValues(alpha: 0.9),
+                        )
+                      : null,
                 ),
               ),
-            
-            SizedBox(height: 12.h),
-            
-            // Genres
-            if (_author!.genres.isNotEmpty)
-              Wrap(
-                spacing: 8.w,
-                children: _author!.genres.take(3).map((genre) {
-                  return Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(12.r),
-                    ),
-                    child: Text(
-                      genre,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            
-            SizedBox(height: 16.h),
-            
-            // Bio
-            if (_author!.bio != null)
+              
+              SizedBox(height: 16.h),
+              
+              // Name
               Text(
-                _author!.bio!,
+                _author!.name,
                 style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white.withValues(alpha: 0.9),
-                  height: 1.4,
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
                 textAlign: TextAlign.center,
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
               ),
-            
-            SizedBox(height: 20.h),
-            
-            // Stats Row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _buildStatItem('Works', _author!.totalWorks.toString()),
-                _buildStatItem('Followers', _formatNumber(_author!.followersCount)),
-                _buildStatItem('Genres', _author!.genres.length.toString()),
-              ],
-            ),
-            
-            SizedBox(height: 20.h),
-            
-            // Action Buttons
-            Row(
-              children: [
-                // Follow Button
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _toggleFollow,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _isFollowing ? Colors.white : Colors.transparent,
-                      foregroundColor: _isFollowing ? Theme.of(context).primaryColor : Colors.white,
-                      side: const BorderSide(color: Colors.white, width: 2),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
+              
+              SizedBox(height: 8.h),
+              
+              // Bio
+              if (_author!.bio != null && _author!.bio!.isNotEmpty)
+                Text(
+                  _author!.bio!,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    color: Colors.white.withOpacity(0.9),
+                  ),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              
+              SizedBox(height: 20.h),
+              
+              // Follow Button
+              SizedBox(
+                width: 200.w,
+                child: ElevatedButton.icon(
+                  onPressed: _toggleFollow,
+                  icon: Icon(
+                    _isFollowing ? Icons.check : Icons.add,
+                    size: 20.sp,
+                  ),
+                  label: Text(
+                    _isFollowing ? 'Following' : 'Follow',
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: Text(
-                      _isFollowing ? 'Following' : 'Follow',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _isFollowing 
+                        ? Colors.white.withOpacity(0.2)
+                        : Colors.white,
+                    foregroundColor: _isFollowing 
+                        ? Colors.white
+                        : Theme.of(context).primaryColor,
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(25.r),
+                      side: BorderSide(
+                        color: Colors.white,
+                        width: _isFollowing ? 2 : 0,
                       ),
                     ),
                   ),
                 ),
-                
-                SizedBox(width: 12.w),
-                
-                // Social Links Button
-                if (_author!.socialLinks.isNotEmpty)
-                  ElevatedButton(
-                    onPressed: _showSocialLinks,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.r),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-                    ),
-                    child: Icon(
-                      Icons.share,
-                      size: 20.sp,
-                    ),
-                  ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatisticsCard() {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatItem(
+            'Books',
+            _author!.totalWorks.toString(),
+            Icons.menu_book,
+          ),
+          _buildDivider(),
+          _buildStatItem(
+            'Followers',
+            _formatNumber(_author!.followersCount),
+            Icons.people,
+          ),
+          _buildDivider(),
+          _buildStatItem(
+            'Genres',
+            _author!.genres.length.toString(),
+            Icons.category,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
+        Icon(
+          icon,
+          size: 28.sp,
+          color: Theme.of(context).primaryColor,
+        ),
+        SizedBox(height: 8.h),
         Text(
           value,
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
-        SizedBox(height: 4.h),
         Text(
           label,
           style: TextStyle(
             fontSize: 12.sp,
-            color: Colors.white.withValues(alpha: 0.8),
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(40.w),
-        child: Column(
-          children: [
-            Icon(
-              Icons.library_books_outlined,
-              size: 64.sp,
-              color: Theme.of(context).textTheme.bodySmall?.color,
+  Widget _buildDivider() {
+    return Container(
+      height: 40.h,
+      width: 1,
+      color: Colors.grey.withOpacity(0.3),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    if (_author!.bio == null || _author!.bio!.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20.w),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'About',
+            style: TextStyle(
+              fontSize: 18.sp,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).textTheme.bodyLarge?.color,
             ),
+          ),
+          
+          SizedBox(height: 12.h),
+          
+          Text(
+            _author!.bio!,
+            style: TextStyle(
+              fontSize: 14.sp,
+              height: 1.5,
+              color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.8),
+            ),
+          ),
+          
+          if (_author!.genres.isNotEmpty) ...[
             SizedBox(height: 16.h),
             Text(
-              'No Works Available',
+              'Genres',
               style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.w500,
+                fontSize: 14.sp,
+                fontWeight: FontWeight.w600,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 8.h),
-            Text(
-              'This author\'s works are not yet available on the platform.',
-              style: TextStyle(
-                fontSize: 14.sp,
-                color: Theme.of(context).textTheme.bodySmall?.color,
-              ),
-              textAlign: TextAlign.center,
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 4.h,
+              children: _author!.genres.map((genre) => Chip(
+                label: Text(
+                  genre,
+                  style: TextStyle(fontSize: 12.sp),
+                ),
+                backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+                labelStyle: TextStyle(
+                  color: Theme.of(context).primaryColor,
+                ),
+              )).toList(),
             ),
           ],
-        ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWorksSection() {
+    return Container(
+      margin: EdgeInsets.all(20.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Works (${_works.length})',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                ),
+              ),
+              if (_works.length > 6)
+                TextButton(
+                  onPressed: () => _showAllWorks(),
+                  child: Text(
+                    'View All',
+                    style: TextStyle(
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          
+          SizedBox(height: 16.h),
+          
+          _works.isEmpty
+              ? Container(
+                  padding: EdgeInsets.all(40.w),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(16.r),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.book_outlined,
+                        size: 48.sp,
+                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.5),
+                      ),
+                      SizedBox(height: 16.h),
+                      Text(
+                        'No published works yet',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                  ),
+                  itemCount: _works.length > 6 ? 6 : _works.length,
+                  itemBuilder: (context, index) {
+                    return BookCard(
+                      book: _works[index],
+                      onTap: () => _openBook(_works[index]),
+                    );
+                  },
+                ),
+        ],
       ),
     );
   }
@@ -412,7 +482,7 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
     return number.toString();
   }
 
-  void _toggleFollow() async {
+  Future<void> _toggleFollow() async {
     setState(() => _isFollowing = !_isFollowing);
     
     try {
@@ -422,71 +492,105 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              _isFollowing ? 'Following author' : 'Unfollowed author',
+              _isFollowing ? 'Following ${_author!.name}' : 'Unfollowed ${_author!.name}',
             ),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+            backgroundColor: Theme.of(context).primaryColor,
+            duration: const Duration(seconds: 2),
+          ),
+        );
       }
     } catch (e) {
       // Revert on error
       setState(() => _isFollowing = !_isFollowing);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to update follow status'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
-  void _showSocialLinks() {
+  void _shareAuthor() {
+    // Implement share functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Sharing ${_author!.name}...'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  void _openBook(Book book) {
+    Navigator.pushNamed(
+      context,
+      '/reader',
+      arguments: book.id,
+    );
+  }
+
+  void _showAllWorks() {
+    // Navigate to all works page or show modal
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-      ),
-      builder: (context) => Container(
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Social Links',
-              style: TextStyle(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-              ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.9,
+        maxChildSize: 0.9,
+        minChildSize: 0.5,
+        builder: (context, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20.r),
+              topRight: Radius.circular(20.r),
             ),
-            SizedBox(height: 20.h),
-            
-            ..._author!.socialLinks.map((link) {
-              IconData icon = Icons.link;
-              String platform = 'Link';
-              
-              if (link.contains('twitter.com')) {
-                icon = Icons.alternate_email;
-                platform = 'Twitter';
-              } else if (link.contains('linkedin.com')) {
-                icon = Icons.business;
-                platform = 'LinkedIn';
-              } else if (link.contains('facebook.com')) {
-                icon = Icons.facebook;
-                platform = 'Facebook';
-              } else if (link.contains('instagram.com')) {
-                icon = Icons.camera_alt;
-                platform = 'Instagram';
-              } else if (link.contains('youtube.com')) {
-                icon = Icons.play_arrow;
-                platform = 'YouTube';
-              }
-              
-              return ListTile(
-                leading: Icon(icon),
-                title: Text(platform),
-                subtitle: Text(
-                  link,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 8.h),
+                height: 4.h,
+                width: 40.w,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(2.r),
                 ),
-                onTap: () => _launchUrl(link),
-              );
-            }),
-          ],
+              ),
+              Padding(
+                padding: EdgeInsets.all(20.w),
+                child: Text(
+                  'All Works by ${_author!.name}',
+                  style: TextStyle(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GridView.builder(
+                  controller: scrollController,
+                  padding: EdgeInsets.symmetric(horizontal: 20.w),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 0.75,
+                    crossAxisSpacing: 16.w,
+                    mainAxisSpacing: 16.h,
+                  ),
+                  itemCount: _works.length,
+                  itemBuilder: (context, index) {
+                    return BookCard(
+                      book: _works[index],
+                      onTap: () => _openBook(_works[index]),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -497,18 +601,5 @@ class _AuthorProfilePageState extends ConsumerState<AuthorProfilePage> {
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
-    if (mounted) Navigator.pop(context);
-  }
-
-  void _navigateToReader(Book book) {
-    Navigator.pushNamed(
-      context,
-      AppRouter.reader,
-      arguments: {
-        'bookId': book.id,
-        'bookTitle': book.title,
-        'bookUrl': book.pdfUrl ?? '',
-      },
-    );
   }
 }
