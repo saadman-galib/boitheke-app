@@ -10,12 +10,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:boitheke/main.dart';
 
 void main() {
-  testWidgets('BoiTheke app launches correctly', (WidgetTester tester) async {
+  testWidgets('Boitheke app launches correctly', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const ProviderScope(child: BoiThekeApp()));
 
     // Verify that the splash screen appears
-    expect(find.text('BoiTheke'), findsOneWidget);
+    expect(find.text('Boitheke'), findsOneWidget);
     expect(find.text('Offline stories, online forever.'), findsOneWidget);
   });
 }

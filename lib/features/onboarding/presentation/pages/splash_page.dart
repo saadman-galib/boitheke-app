@@ -120,7 +120,7 @@ class _SplashPageState extends State<SplashPage>
                         
                         // App Name
                         Text(
-                          'BoiTheke',
+                          'Boitheke',
                           style: TextStyle(
                             fontSize: 42.sp,
                             fontWeight: FontWeight.bold,

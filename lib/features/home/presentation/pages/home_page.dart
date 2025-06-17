@@ -71,7 +71,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                   SizedBox(width: 8.w),
                   Text(
-                    'BoiTheke',
+                    'Boitheke',
                     style: TextStyle(
                       color: Theme.of(context).textTheme.displayLarge?.color,
                       fontSize: 20.sp,
